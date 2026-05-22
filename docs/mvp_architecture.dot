@@ -1,0 +1,111 @@
+// InterviewKit AI — MVP Architecture (Graphviz DOT)
+// Render with: dot -Tpng mvp_architecture.dot -o mvp_architecture.png
+
+digraph InterviewKitMVP {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11];
+    edge [fontname="Helvetica", fontsize=9];
+    
+    // Color scheme
+    // Frontend: #3B82F6 (blue)
+    // Gateway: #8B5CF6 (purple)
+    // Backend services: #10B981 (green)
+    // AI services: #F59E0B (amber)
+    // Infrastructure: #6B7280 (gray)
+
+    // === CLIENTS ===
+    subgraph cluster_clients {
+        label="Clients";
+        style="dashed";
+        color="#94A3B8";
+        fontcolor="#94A3B8";
+        
+        browser [label="Browser\n(Next.js SSR/CSR)", fillcolor="#DBEAFE", color="#3B82F6"];
+    }
+
+    // === API GATEWAY ===
+    subgraph cluster_gateway {
+        label="API Gateway (Port 8000)";
+        style="rounded";
+        color="#8B5CF6";
+        fontcolor="#8B5CF6";
+        
+        gateway [label="API Gateway\nFastAPI\n─────────────\nAuth verification\nRate limiting\nRequest routing", fillcolor="#EDE9FE", color="#8B5CF6"];
+    }
+
+    // === BACKEND SERVICES ===
+    subgraph cluster_services {
+        label="Microservices";
+        style="rounded";
+        color="#10B981";
+        fontcolor="#10B981";
+
+        auth [label="Auth Service\nPort 8001\n─────────────\nJWT/OAuth\nUser management\nUsage tracking\nStripe billing", fillcolor="#D1FAE5", color="#10B981"];
+        
+        resume [label="Resume Service\nPort 8002\n─────────────\nPDF/DOCX parsing\nText extraction\nLLM structuring\nCache layer", fillcolor="#D1FAE5", color="#10B981"];
+        
+        orchestrator [label="Kit Orchestrator\nPort 8004\n─────────────\nPipeline control\nParallel execution\nKit assembly\nSSE streaming", fillcolor="#D1FAE5", color="#10B981"];
+        
+        export [label="Export Service\nPort 8005\n─────────────\nPDF generation\nHTML templates\nShare links\nAsync queue", fillcolor="#D1FAE5", color="#10B981"];
+    }
+
+    // === AI ENGINE ===
+    subgraph cluster_ai {
+        label="AI Engine Service (Port 8003)";
+        style="rounded";
+        color="#F59E0B";
+        fontcolor="#F59E0B";
+        
+        ai_engine [label="AI Engine\nFastAPI\n─────────────\nPrompt Manager\nJD Analyzer\nQuestion Generator\nTest Generator\nRubric Generator\nRed Flags Analyzer\nFlow Guide Generator", fillcolor="#FEF3C7", color="#F59E0B"];
+    }
+
+    // === INFRASTRUCTURE ===
+    subgraph cluster_infra {
+        label="Infrastructure";
+        style="rounded";
+        color="#6B7280";
+        fontcolor="#6B7280";
+        
+        postgres [label="PostgreSQL\n(Supabase)", shape=cylinder, fillcolor="#F3F4F6", color="#6B7280"];
+        redis [label="Redis\n(Cache + Queue)", shape=cylinder, fillcolor="#F3F4F6", color="#6B7280"];
+        storage [label="File Storage\n(S3/Supabase)", shape=cylinder, fillcolor="#F3F4F6", color="#6B7280"];
+    }
+
+    // === EXTERNAL ===
+    subgraph cluster_external {
+        label="External APIs";
+        style="dashed";
+        color="#DC2626";
+        fontcolor="#DC2626";
+        
+        claude [label="Claude API\n(Anthropic)", fillcolor="#FEE2E2", color="#DC2626"];
+        stripe [label="Stripe\n(Payments)", fillcolor="#FEE2E2", color="#DC2626"];
+        google [label="Google OAuth", fillcolor="#FEE2E2", color="#DC2626"];
+    }
+
+    // === EDGES ===
+    browser -> gateway [label="HTTPS\nREST + SSE", color="#3B82F6"];
+    
+    gateway -> auth [label="verify token", color="#8B5CF6"];
+    gateway -> orchestrator [label="generate kit", color="#8B5CF6"];
+    gateway -> export [label="export PDF", color="#8B5CF6"];
+    
+    orchestrator -> resume [label="parse resume", color="#10B981"];
+    orchestrator -> ai_engine [label="parallel gen\n(5 concurrent)", color="#F59E0B", style="bold"];
+    orchestrator -> postgres [label="store kit", color="#6B7280"];
+    orchestrator -> redis [label="job queue\nstatus cache", color="#6B7280"];
+    
+    resume -> storage [label="upload files", color="#6B7280"];
+    resume -> ai_engine [label="structure text", color="#F59E0B"];
+    resume -> redis [label="cache results", color="#6B7280"];
+    
+    ai_engine -> claude [label="LLM calls", color="#DC2626", style="bold"];
+    
+    auth -> postgres [label="users, teams", color="#6B7280"];
+    auth -> stripe [label="subscriptions", color="#DC2626"];
+    auth -> google [label="OAuth flow", color="#DC2626"];
+    
+    export -> postgres [label="fetch kit", color="#6B7280"];
+    export -> storage [label="store PDFs", color="#6B7280"];
+    export -> redis [label="export queue", color="#6B7280"];
+}

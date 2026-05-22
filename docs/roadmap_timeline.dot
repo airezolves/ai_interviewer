@@ -1,0 +1,135 @@
+// InterviewKit AI — Full Roadmap Timeline (Graphviz DOT)
+// Render with: dot -Tpng roadmap_timeline.dot -o roadmap_timeline.png
+
+digraph RoadmapTimeline {
+    rankdir=LR;
+    node [shape=record, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Phase 0
+    subgraph cluster_phase0 {
+        label="Phase 0: Foundation\nWeek 1-2";
+        style="rounded";
+        color="#6366F1";
+        fontcolor="#6366F1";
+        bgcolor="#EEF2FF";
+
+        p0_ds1 [label="{DS1|Monorepo setup\nDocker Compose\nResume parsing\nCI/CD}", fillcolor="#C7D2FE", color="#6366F1"];
+        p0_ds2 [label="{DS2|Prompt R&D\nQuestion prompts\nTest prompts\nRubric prompts}", fillcolor="#C7D2FE", color="#6366F1"];
+        p0_fe1 [label="{FE1|Next.js setup\nLanding page\nWaitlist\nDesign system}", fillcolor="#C7D2FE", color="#6366F1"];
+    }
+
+    // Phase 1 Sprint 1
+    subgraph cluster_sprint1 {
+        label="Phase 1 Sprint 1\nWeek 3-4";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        bgcolor="#ECFDF5";
+
+        s1_ds1 [label="{DS1|Resume Service API\nFile storage\nCache layer\nAPI Gateway}", fillcolor="#A7F3D0", color="#059669"];
+        s1_ds2 [label="{DS2|AI Engine setup\nJD Analyzer\nQuestion Generator\nTest Generator}", fillcolor="#A7F3D0", color="#059669"];
+        s1_fe1 [label="{FE1|JD input panel\nResume upload\nRole selector\nAPI integration}", fillcolor="#A7F3D0", color="#059669"];
+    }
+
+    // Phase 1 Sprint 2
+    subgraph cluster_sprint2 {
+        label="Phase 1 Sprint 2\nWeek 5-6";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        bgcolor="#ECFDF5";
+
+        s2_ds1 [label="{DS1|Kit Orchestrator\nParallel executor\nSSE streaming\nKit storage}", fillcolor="#A7F3D0", color="#059669"];
+        s2_ds2 [label="{DS2|Rubric Generator\nRed Flags\nFlow Guide\nMatch Scorer}", fillcolor="#A7F3D0", color="#059669"];
+        s2_fe1 [label="{FE1|Kit display UI\nQuestion cards\nSSE client\nProgress bar}", fillcolor="#A7F3D0", color="#059669"];
+    }
+
+    // Phase 1 Sprint 3
+    subgraph cluster_sprint3 {
+        label="Phase 1 Sprint 3\nWeek 7-8";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        bgcolor="#ECFDF5";
+
+        s3_ds1 [label="{DS1|Auth Service\nExport Service\nFree tier\nDeploy to prod}", fillcolor="#A7F3D0", color="#059669"];
+        s3_ds2 [label="{DS2|Prompt refinement\nEdge cases\nQuality audit\nFallback logic}", fillcolor="#A7F3D0", color="#059669"];
+        s3_fe1 [label="{FE1|Auth UI\nDashboard\nPDF download\nMobile responsive}", fillcolor="#A7F3D0", color="#059669"];
+    }
+
+    // Phase 2
+    subgraph cluster_phase2 {
+        label="Phase 2: Retention\nWeek 9-16";
+        style="rounded";
+        color="#D97706";
+        fontcolor="#D97706";
+        bgcolor="#FFFBEB";
+
+        p2_ds1 [label="{DS1|Debrief API\nShare links\nTeam workspaces\nStripe billing}", fillcolor="#FDE68A", color="#D97706"];
+        p2_ds2 [label="{DS2|Comparison algo\nFeedback pipeline\nRole templates\nPrompt A/B}", fillcolor="#FDE68A", color="#D97706"];
+        p2_fe1 [label="{FE1|Comparison UI\nDebrief form\nTeam UI\nBilling pages}", fillcolor="#FDE68A", color="#D97706"];
+    }
+
+    // Phase 3
+    subgraph cluster_phase3 {
+        label="Phase 3: Growth\nMonth 5-8";
+        style="rounded";
+        color="#DC2626";
+        fontcolor="#DC2626";
+        bgcolor="#FEF2F2";
+
+        p3_ds1 [label="{DS1|ATS integration\nCalendar API\nPublic API\nFull billing}", fillcolor="#FECACA", color="#DC2626"];
+        p3_ds2 [label="{DS2|Analytics engine\nMore role prompts\nQuality metrics}", fillcolor="#FECACA", color="#DC2626"];
+        p3_fe1 [label="{FE1|SEO pages\nIntegration UIs\nAPI docs\nAdmin panel}", fillcolor="#FECACA", color="#DC2626"];
+    }
+
+    // Phase 4
+    subgraph cluster_phase4 {
+        label="Phase 4: Intelligence\nMonth 9-14";
+        style="rounded";
+        color="#7C3AED";
+        fontcolor="#7C3AED";
+        bgcolor="#F5F3FF";
+
+        p4_ds1 [label="{DS1|Custom builder\nMulti-round\nEnterprise features}", fillcolor="#DDD6FE", color="#7C3AED"];
+        p4_ds2 [label="{DS2|ML prompt engine\nPerformance analytics\nBias detection}", fillcolor="#DDD6FE", color="#7C3AED"];
+        p4_fe1 [label="{FE1|Builder UI\nAnalytics dashboards\nDEI reports}", fillcolor="#DDD6FE", color="#7C3AED"];
+    }
+
+    // Flow
+    p0_ds1 -> s1_ds1;
+    p0_ds2 -> s1_ds2;
+    p0_fe1 -> s1_fe1;
+    
+    s1_ds1 -> s2_ds1;
+    s1_ds2 -> s2_ds2;
+    s1_fe1 -> s2_fe1;
+    
+    s2_ds1 -> s3_ds1;
+    s2_ds2 -> s3_ds2;
+    s2_fe1 -> s3_fe1;
+    
+    s3_ds1 -> p2_ds1;
+    s3_ds2 -> p2_ds2;
+    s3_fe1 -> p2_fe1;
+    
+    p2_ds1 -> p3_ds1;
+    p2_ds2 -> p3_ds2;
+    p2_fe1 -> p3_fe1;
+    
+    p3_ds1 -> p4_ds1;
+    p3_ds2 -> p4_ds2;
+    p3_fe1 -> p4_fe1;
+
+    // Milestones
+    m1 [label="MILESTONE\n200+ waitlist", shape=diamond, fillcolor="#FEE2E2", color="#DC2626", fontsize=9];
+    m2 [label="MILESTONE\n100 users\n300+ kits", shape=diamond, fillcolor="#FEE2E2", color="#DC2626", fontsize=9];
+    m3 [label="MILESTONE\n50 paying teams\n30% retention", shape=diamond, fillcolor="#FEE2E2", color="#DC2626", fontsize=9];
+    m4 [label="MILESTONE\n$10K MRR", shape=diamond, fillcolor="#FEE2E2", color="#DC2626", fontsize=9];
+
+    p0_ds1 -> m1 [style=dashed, color="#DC2626"];
+    s3_ds1 -> m2 [style=dashed, color="#DC2626"];
+    p2_ds1 -> m3 [style=dashed, color="#DC2626"];
+    p3_ds1 -> m4 [style=dashed, color="#DC2626"];
+}

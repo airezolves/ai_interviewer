@@ -1,0 +1,118 @@
+version: "3.8"
+
+services:
+  # ─── Infrastructure ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: interviewkit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend Services ────────────────────────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: backend/gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - AUTH_SERVICE_URL=http://auth:8001
+      - KIT_ORCHESTRATOR_URL=http://orchestrator:8004
+      - EXPORT_SERVICE_URL=http://export:8005
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  auth:
+    build:
+      context: .
+      dockerfile: backend/auth/Dockerfile
+    ports:
+      - "8001:8001"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:devpassword@postgres:5432/interviewkit
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  resume:
+    build:
+      context: .
+      dockerfile: backend/resume/Dockerfile
+    ports:
+      - "8002:8002"
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - AI_ENGINE_URL=http://ai_engine:8003
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  ai_engine:
+    build:
+      context: .
+      dockerfile: backend/ai_engine/Dockerfile
+    ports:
+      - "8003:8003"
+    env_file: .env
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: backend/kit_orchestrator/Dockerfile
+    ports:
+      - "8004:8004"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:devpassword@postgres:5432/interviewkit
+      - REDIS_URL=redis://redis:6379/0
+      - RESUME_SERVICE_URL=http://resume:8002
+      - AI_ENGINE_URL=http://ai_engine:8003
+      - AUTH_SERVICE_URL=http://auth:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  export:
+    build:
+      context: .
+      dockerfile: backend/export/Dockerfile
+    ports:
+      - "8005:8005"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:devpassword@postgres:5432/interviewkit
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pg_data:

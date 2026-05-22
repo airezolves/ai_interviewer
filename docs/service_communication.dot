@@ -1,0 +1,44 @@
+// InterviewKit AI — Service Communication (Graphviz DOT)
+// Render with: dot -Tpng service_communication.dot -o service_communication.png
+
+digraph ServiceComm {
+    rankdir=LR;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+
+    // Services
+    frontend [label="Frontend\nNext.js\nPort 3000", fillcolor="#DBEAFE", color="#3B82F6"];
+    gateway [label="API Gateway\nFastAPI\nPort 8000", fillcolor="#EDE9FE", color="#8B5CF6"];
+    auth [label="Auth\nFastAPI\nPort 8001", fillcolor="#D1FAE5", color="#10B981"];
+    resume [label="Resume\nFastAPI\nPort 8002", fillcolor="#D1FAE5", color="#10B981"];
+    ai_engine [label="AI Engine\nFastAPI\nPort 8003", fillcolor="#FEF3C7", color="#F59E0B"];
+    orchestrator [label="Kit Orchestrator\nFastAPI\nPort 8004", fillcolor="#D1FAE5", color="#10B981"];
+    export [label="Export\nFastAPI\nPort 8005", fillcolor="#D1FAE5", color="#10B981"];
+
+    // Communication patterns
+    frontend -> gateway [label="REST + SSE\n(HTTPS)", color="#3B82F6", penwidth=2];
+    
+    gateway -> auth [label="gRPC/REST\n(internal)", color="#8B5CF6"];
+    gateway -> orchestrator [label="REST\n(internal)", color="#8B5CF6"];
+    gateway -> export [label="REST\n(internal)", color="#8B5CF6"];
+    
+    orchestrator -> resume [label="REST\n(async)", color="#10B981"];
+    orchestrator -> ai_engine [label="REST\n(5x parallel)", color="#F59E0B", penwidth=2];
+    
+    resume -> ai_engine [label="REST\n(text structuring)", color="#F59E0B"];
+
+    // Legend
+    subgraph cluster_legend {
+        label="Communication Patterns";
+        style="dashed";
+        color="#94A3B8";
+        fontcolor="#94A3B8";
+        
+        l1 [label="Sync REST: User-facing requests", shape=plaintext, fillcolor="white"];
+        l2 [label="Async Queue: Background jobs (PDF gen)", shape=plaintext, fillcolor="white"];
+        l3 [label="SSE: Real-time progress streaming", shape=plaintext, fillcolor="white"];
+        l4 [label="Webhook: Stripe events", shape=plaintext, fillcolor="white"];
+        
+        l1 -> l2 -> l3 -> l4 [style=invis];
+    }
+}

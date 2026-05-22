@@ -1,0 +1,75 @@
+// InterviewKit AI — Kit Generation Pipeline (Graphviz DOT)
+// Render with: dot -Tpng mvp_pipeline.dot -o mvp_pipeline.png
+
+digraph KitPipeline {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=10];
+    edge [fontname="Helvetica", fontsize=9];
+    compound=true;
+
+    // Input
+    input [label="User Input\nJD + Resume + Role Type", fillcolor="#DBEAFE", color="#3B82F6", shape=parallelogram];
+
+    // Phase 1: Parallel Parsing
+    subgraph cluster_parse {
+        label="Phase 1: Parallel Parsing (2-4s)";
+        style="rounded,dashed";
+        color="#10B981";
+        fontcolor="#10B981";
+        
+        parse_resume [label="Resume Service\nPDF/DOCX → Text → Structured JSON\n{skills, experience, projects, gaps}", fillcolor="#D1FAE5", color="#10B981"];
+        parse_jd [label="AI Engine: JD Analyzer\nRaw JD → Structured JSON\n{required_skills, seniority, responsibilities}", fillcolor="#FEF3C7", color="#F59E0B"];
+    }
+
+    // Phase 2: Match Analysis
+    match [label="AI Engine: Match Scorer\nCandidate × JD → Match Analysis\n{skill_match, gaps, level_calibration}", fillcolor="#FEF3C7", color="#F59E0B"];
+
+    // Phase 3: Parallel Generation
+    subgraph cluster_generate {
+        label="Phase 2: Parallel Generation (8-12s)";
+        style="rounded,dashed";
+        color="#F59E0B";
+        fontcolor="#F59E0B";
+        
+        gen_questions [label="Question Generator\n8-12 tailored questions\n+ model answers + follow-ups", fillcolor="#FEF3C7", color="#F59E0B"];
+        gen_test [label="Practical Test Generator\nRole-specific assessment\n3 difficulty variants", fillcolor="#FEF3C7", color="#F59E0B"];
+        gen_rubric [label="Rubric Generator\n6-10 weighted criteria\n1-5 scale + calibration", fillcolor="#FEF3C7", color="#F59E0B"];
+        gen_flags [label="Red Flags Analyzer\n3-5 concerns\n+ diplomatic probes", fillcolor="#FEF3C7", color="#F59E0B"];
+        gen_flow [label="Flow Guide Generator\nMinute-by-minute\ninterview structure", fillcolor="#FEF3C7", color="#F59E0B"];
+    }
+
+    // Phase 4: Assembly
+    assemble [label="Kit Orchestrator: Assemble\nCollect all outputs → Unified Kit JSON\nStore in DB → Return kit_id", fillcolor="#D1FAE5", color="#10B981"];
+
+    // Output
+    output [label="Complete Interview Kit\nReady for UI render + PDF export", fillcolor="#DBEAFE", color="#3B82F6", shape=parallelogram];
+
+    // SSE
+    sse [label="SSE Stream\nReal-time progress\nupdates to browser", fillcolor="#EDE9FE", color="#8B5CF6", shape=note];
+
+    // Edges
+    input -> parse_resume [label="file/text"];
+    input -> parse_jd [label="JD text"];
+    
+    parse_resume -> match [label="structured_resume"];
+    parse_jd -> match [label="structured_jd"];
+    
+    match -> gen_questions [label="context"];
+    match -> gen_test [label="context"];
+    match -> gen_rubric [label="context"];
+    match -> gen_flags [label="context"];
+    match -> gen_flow [label="context"];
+    
+    gen_questions -> assemble;
+    gen_test -> assemble;
+    gen_rubric -> assemble;
+    gen_flags -> assemble;
+    gen_flow -> assemble;
+    
+    assemble -> output;
+    assemble -> sse [style="dashed", color="#8B5CF6"];
+
+    // Invisible edges for layout
+    {rank=same; parse_resume; parse_jd}
+    {rank=same; gen_questions; gen_test; gen_rubric; gen_flags; gen_flow}
+}

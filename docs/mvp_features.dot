@@ -1,0 +1,101 @@
+// InterviewKit AI — MVP Feature Dependency Graph (Graphviz DOT)
+// Render with: dot -Tpng mvp_features.dot -o mvp_features.png
+
+digraph MVPFeatures {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=9];
+    edge [fontname="Helvetica", fontsize=8];
+    
+    // Phase 0
+    subgraph cluster_phase0 {
+        label="Phase 0: Foundation (Week 1-2)";
+        style="rounded";
+        color="#6366F1";
+        fontcolor="#6366F1";
+        
+        landing [label="Landing Page\n+ Waitlist", fillcolor="#EEF2FF", color="#6366F1"];
+        prompts [label="LLM Prompt\nR&D", fillcolor="#EEF2FF", color="#6366F1"];
+        resume_parser [label="Resume\nParsing", fillcolor="#EEF2FF", color="#6366F1"];
+        repo_setup [label="Repo +\nDocker Setup", fillcolor="#EEF2FF", color="#6366F1"];
+    }
+
+    // Phase 1 - Sprint 1
+    subgraph cluster_sprint1 {
+        label="Phase 1 Sprint 1 (Week 3-4)";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        
+        resume_svc [label="Resume\nService API", fillcolor="#ECFDF5", color="#059669"];
+        jd_analyzer [label="JD\nAnalyzer", fillcolor="#ECFDF5", color="#059669"];
+        question_gen [label="Question\nGenerator", fillcolor="#ECFDF5", color="#059669"];
+        test_gen [label="Practical Test\nGenerator", fillcolor="#ECFDF5", color="#059669"];
+        input_ui [label="Input UI\n(JD + Resume)", fillcolor="#ECFDF5", color="#059669"];
+        gateway_v1 [label="API Gateway\nv1", fillcolor="#ECFDF5", color="#059669"];
+    }
+
+    // Phase 1 - Sprint 2
+    subgraph cluster_sprint2 {
+        label="Phase 1 Sprint 2 (Week 5-6)";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        
+        rubric_gen [label="Rubric\nGenerator", fillcolor="#ECFDF5", color="#059669"];
+        flags_gen [label="Red Flags\nAnalyzer", fillcolor="#ECFDF5", color="#059669"];
+        flow_gen [label="Flow Guide\nGenerator", fillcolor="#ECFDF5", color="#059669"];
+        orchestrator [label="Kit\nOrchestrator", fillcolor="#ECFDF5", color="#059669"];
+        kit_ui [label="Kit Display\nUI", fillcolor="#ECFDF5", color="#059669"];
+        sse [label="SSE\nStreaming", fillcolor="#ECFDF5", color="#059669"];
+    }
+
+    // Phase 1 - Sprint 3
+    subgraph cluster_sprint3 {
+        label="Phase 1 Sprint 3 (Week 7-8)";
+        style="rounded";
+        color="#059669";
+        fontcolor="#059669";
+        
+        auth_svc [label="Auth\nService", fillcolor="#ECFDF5", color="#059669"];
+        export_svc [label="PDF Export\nService", fillcolor="#ECFDF5", color="#059669"];
+        auth_ui [label="Auth UI\n+ Dashboard", fillcolor="#ECFDF5", color="#059669"];
+        free_tier [label="Free Tier\nLimits", fillcolor="#ECFDF5", color="#059669"];
+    }
+
+    // Dependencies
+    resume_parser -> resume_svc;
+    prompts -> jd_analyzer;
+    prompts -> question_gen;
+    prompts -> test_gen;
+    repo_setup -> gateway_v1;
+    repo_setup -> resume_svc;
+    
+    resume_svc -> orchestrator;
+    jd_analyzer -> orchestrator;
+    question_gen -> orchestrator;
+    test_gen -> orchestrator;
+    prompts -> rubric_gen;
+    prompts -> flags_gen;
+    prompts -> flow_gen;
+    rubric_gen -> orchestrator;
+    flags_gen -> orchestrator;
+    flow_gen -> orchestrator;
+    
+    gateway_v1 -> orchestrator;
+    input_ui -> kit_ui;
+    orchestrator -> sse;
+    sse -> kit_ui;
+    
+    orchestrator -> export_svc;
+    gateway_v1 -> auth_svc;
+    auth_svc -> free_tier;
+    auth_svc -> auth_ui;
+    kit_ui -> auth_ui;
+    export_svc -> auth_ui;
+
+    // MVP boundary
+    mvp [label="═══ MVP COMPLETE ═══\nPhase 1 Exit: 100 users, 300+ kits", shape=plaintext, fontsize=11, fontcolor="#DC2626"];
+    auth_ui -> mvp [style=invis];
+    free_tier -> mvp [style=invis];
+    export_svc -> mvp [style=invis];
+}
