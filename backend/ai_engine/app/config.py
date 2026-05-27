@@ -11,8 +11,8 @@ class AIEngineSettings(BaseAppSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     gemini_api_key: str = ""
-    llm_primary_provider: str = "anthropic"  # Options: anthropic, openai, gemini
-    llm_primary_model: str = "claude-sonnet-4-20250514"
+    llm_provider: str = "gemini"  # Options: anthropic, openai, gemini
+    llm_model: str = "gemini-2.5-pro"
     llm_fallback_provider: str = "openai"
     llm_fallback_model: str = "gpt-4o"
 
