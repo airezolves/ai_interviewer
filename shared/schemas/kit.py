@@ -1,6 +1,7 @@
 """Kit-related schemas — the core data models."""
 
-from pydantic import BaseModel
+from typing import Literal
+from pydantic import BaseModel, Field, field_validator
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
@@ -25,12 +26,67 @@ class KitStatus(str, Enum):
 # ─── Sub-components ────────────────────────────────────────────
 
 class StructuredJD(BaseModel):
-    required_skills: list[str] = []
-    nice_to_have_skills: list[str] = []
-    seniority: str = "mid"
-    responsibilities: list[str] = []
-    team_context: str = ""
-    company_info: str = ""
+    """
+    Structured representation of a job description extracted via LLM parsing.
+    This schema ensures consistent, validated JD data extraction for interview kit generation.
+    """
+    
+    required_skills: list[str] = Field(
+        description="Mandatory skills, technologies, or qualifications explicitly required for the role (e.g., 'Python', '5+ years experience', 'SQL', 'Machine Learning')"
+    )
+    nice_to_have_skills: list[str] = Field(
+        default_factory=list,
+        description="Preferred, optional, or bonus skills that would be beneficial but not mandatory (e.g., 'AWS certification', 'Spark', 'Team leadership experience')"
+    )
+    seniority: Literal["junior", "mid", "senior"] = Field(
+        description="Required seniority level based on years of experience, responsibilities, and job description tone: 'junior' (0-2 years), 'mid' (2-5 years), 'senior' (5+ years or leadership)"
+    )
+    responsibilities: list[str] = Field(
+        description="Key job responsibilities, day-to-day tasks, and expected deliverables for this role"
+    )
+    team_context: str = Field(
+        default="",
+        description="Information about the team structure, size, reporting relationships, and collaboration dynamics (e.g., 'Reports to Head of Data, works with 5-person analytics team')"
+    )
+    company_info: str = Field(
+        default="",
+        description="Brief company description including industry, size, stage, mission, or culture if mentioned in the JD"
+    )
+    
+    # @field_validator("seniority")
+    # @classmethod
+    # def validate_seniority(cls, v: str) -> str:
+    #     """Ensure seniority is valid."""
+    #     valid_levels = {"junior", "mid", "senior"}
+    #     if v not in valid_levels:
+    #         return "mid"  # Default fallback
+    #     return v
+    
+    # @field_validator("required_skills", "nice_to_have_skills", mode="after")
+    # @classmethod
+    # def deduplicate_skills(cls, v: list[str]) -> list[str]:
+    #     """Remove duplicates while preserving order."""
+    #     seen = set()
+    #     result = []
+    #     for item in v:
+    #         item_lower = item.lower().strip()
+    #         if item_lower and item_lower not in seen:
+    #             seen.add(item_lower)
+    #             result.append(item.strip())
+    #     return result
+    
+    # @field_validator("responsibilities", mode="after")
+    # @classmethod
+    # def clean_responsibilities(cls, v: list[str]) -> list[str]:
+    #     """Remove empty and duplicate responsibilities."""
+    #     seen = set()
+    #     result = []
+    #     for item in v:
+    #         item_clean = item.strip()
+    #         if item_clean and item_clean not in seen:
+    #             seen.add(item_clean)
+    #             result.append(item_clean)
+    #     return result
 
 
 class Question(BaseModel):
