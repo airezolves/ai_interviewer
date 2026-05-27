@@ -10,7 +10,8 @@ class AIEngineSettings(BaseAppSettings):
     service_port: int = 8003
     anthropic_api_key: str = ""
     openai_api_key: str = ""
-    llm_primary_provider: str = "anthropic"
+    gemini_api_key: str = ""
+    llm_primary_provider: str = "anthropic"  # Options: anthropic, openai, gemini
     llm_primary_model: str = "claude-sonnet-4-20250514"
     llm_fallback_provider: str = "openai"
     llm_fallback_model: str = "gpt-4o"
