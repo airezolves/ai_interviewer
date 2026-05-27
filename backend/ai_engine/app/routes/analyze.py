@@ -30,6 +30,12 @@ async def analyze_jd_endpoint(data: AnalyzeJDRequest):
 @router.post("/match-score", response_model=MatchAnalysis)
 async def match_score_endpoint(data: MatchScoreRequest):
     """Compute resume-JD match score."""
-    resume = StructuredResume(**data.structured_resume)
+    # Handle nested structured_resume if coming from ResumeParseResponse
+    resume_data = data.structured_resume
+    if "structured_resume" in resume_data:
+        # It's a ResumeParseResponse, extract the nested structured_resume
+        resume_data = resume_data["structured_resume"]
+    
+    resume = StructuredResume(**resume_data)
     jd = StructuredJD(**data.structured_jd)
     return await compute_match_score(resume, jd, data.role_type)

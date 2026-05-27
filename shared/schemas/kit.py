@@ -143,11 +143,59 @@ class FlowSection(BaseModel):
 
 
 class MatchAnalysis(BaseModel):
-    overall_match_score: float  # 0-100
-    skill_matches: list[str] = []
-    skill_gaps: list[str] = []
-    experience_fit: str = ""
-    level_calibration: str = ""
+    """
+    Analysis of how well a candidate's resume matches a job description.
+    Provides scoring and detailed breakdown of skill alignment and experience fit.
+    """
+    
+    overall_match_score: float = Field(
+        ge=0.0,
+        le=100.0,
+        description="Overall fit score from 0-100 representing how well the candidate matches the job requirements. Higher scores indicate better alignment."
+    )
+    skill_matches: list[str] = Field(
+        default_factory=list,
+        description="Skills and technologies the candidate POSSESSES that the job description requires or prefers (intersection of candidate skills and JD requirements)"
+    )
+    skill_gaps: list[str] = Field(
+        default_factory=list,
+        description="Required or important skills from the JD that the candidate's resume does NOT demonstrate (skills the candidate needs to develop or clarify)"
+    )
+    experience_fit: str = Field(
+        description="Narrative assessment of how the candidate's experience level, years, and background align with job requirements. Include specific observations about relevant experience."
+    )
+    level_calibration: Literal["underqualified", "appropriate", "overqualified", "unknown"] = Field(
+        description="Whether the candidate is 'underqualified' (below required level), 'appropriate' (good fit), 'overqualified' (exceeds requirements), or 'unknown' (insufficient information)"
+    )
+    
+    # @field_validator("overall_match_score")
+    # @classmethod
+    # def validate_score_range(cls, v: float) -> float:
+    #     """Ensure match score is within valid range."""
+    #     return max(0.0, min(100.0, v))
+    
+    # @field_validator("skill_matches", "skill_gaps", mode="after")
+    # @classmethod
+    # def deduplicate_and_clean_skills(cls, v: list[str]) -> list[str]:
+    #     """Remove duplicates and empty values from skill lists."""
+    #     seen = set()
+    #     result = []
+    #     for item in v:
+    #         item_clean = item.strip()
+    #         item_lower = item_clean.lower()
+    #         if item_clean and item_lower not in seen:
+    #             seen.add(item_lower)
+    #             result.append(item_clean)
+    #     return result
+    
+    # @field_validator("level_calibration")
+    # @classmethod
+    # def validate_calibration(cls, v: str) -> str:
+    #     """Ensure level calibration is valid."""
+    #     valid_calibrations = {"underqualified", "appropriate", "overqualified", "unknown"}
+    #     if v not in valid_calibrations:
+    #         return "unknown"  # Default fallback
+    #     return v
 
 
 # ─── Kit (full output) ─────────────────────────────────────────
