@@ -8,9 +8,6 @@ from backend.ai_engine.app.generators.test_generator import generate_practical_t
 from backend.ai_engine.app.generators.rubric_generator import generate_rubric
 from backend.ai_engine.app.generators.red_flags_generator import analyze_red_flags
 from backend.ai_engine.app.generators.flow_generator import generate_flow_guide
-from shared.schemas.kit import (
-    Question, PracticalTest, Rubric, RedFlag, FlowSection, MatchAnalysis,
-)
 
 router = APIRouter()
 
@@ -21,6 +18,7 @@ class GenerationContext(BaseModel):
     structured_jd: dict
     match_analysis: dict
     role_type: str = "data_scientist"
+    questions: list[dict] | None = None  # Optional: Only for flow generator
 
 
 @router.post("/generate-questions")
@@ -70,6 +68,15 @@ async def generate_flow_endpoint(ctx: GenerationContext):
     """Generate an interview flow guide.
     
     Returns: JSON array of FlowSection objects
+    
+    NOTE: If questions are provided in context, they will be used for intelligent
+    question mapping. Otherwise, generic indices will be used.
     """
-    flow = await generate_flow_guide(ctx.structured_resume, ctx.structured_jd, ctx.match_analysis, ctx.role_type)
+    flow = await generate_flow_guide(
+        ctx.structured_resume, 
+        ctx.structured_jd, 
+        ctx.match_analysis, 
+        ctx.role_type,
+        ctx.questions  # Pass questions if available
+    )
     return [s.model_dump() for s in flow] if flow and hasattr(flow[0], 'model_dump') else flow

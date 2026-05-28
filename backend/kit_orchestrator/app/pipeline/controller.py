@@ -63,7 +63,7 @@ async def run_pipeline(
                 structured_resume_data = structured_resume
             else:
                 # Need to structure the resume text (plain text input case)
-                resume_coro = _structure_resume(client, settings, resume_text)
+                resume_coro = _parse_resume(client, settings, resume_text)
                 structured_resume_data = None
             
             jd_coro = _analyze_jd(client, settings, jd_text)
@@ -82,7 +82,7 @@ async def run_pipeline(
 
             await update_job("generating", "generating_kit_sections", 35)
 
-            # ─── Phase 3: Generate all sections (parallel) ─────────────
+            # ─── Phase 3: Generate sections (questions first, then rest) ───
             context = {
                 "structured_resume": structured_resume_data,
                 "structured_jd": structured_jd,
@@ -90,22 +90,28 @@ async def run_pipeline(
                 "role_type": role_type,
             }
 
-            questions_coro = _generate(client, settings, "/generate-questions", context)
+            # Generate questions FIRST (flow guide needs them for mapping)
+            questions = await _generate(client, settings, "/generate-questions", context)
+            if isinstance(questions, Exception):
+                questions = None
+            
+            # Now generate rest in parallel, including flow with questions context
+            flow_context = {**context, "questions": questions} if questions else context
+            
             test_coro = _generate(client, settings, "/generate-test", context)
             rubric_coro = _generate(client, settings, "/generate-rubric", context)
             flags_coro = _generate(client, settings, "/generate-red-flags", context)
-            flow_coro = _generate(client, settings, "/generate-flow", context)
+            flow_coro = _generate(client, settings, "/generate-flow", flow_context)
 
             results = await asyncio.gather(
-                questions_coro, test_coro, rubric_coro, flags_coro, flow_coro,
+                test_coro, rubric_coro, flags_coro, flow_coro,
                 return_exceptions=True,
             )
 
-            questions = results[0] if not isinstance(results[0], Exception) else None
-            practical_test = results[1] if not isinstance(results[1], Exception) else None
-            rubric = results[2] if not isinstance(results[2], Exception) else None
-            red_flags = results[3] if not isinstance(results[3], Exception) else None
-            flow_guide = results[4] if not isinstance(results[4], Exception) else None
+            practical_test = results[0] if not isinstance(results[0], Exception) else None
+            rubric = results[1] if not isinstance(results[1], Exception) else None
+            red_flags = results[2] if not isinstance(results[2], Exception) else None
+            flow_guide = results[3] if not isinstance(results[3], Exception) else None
 
             await update_job("generating", "assembling", 85)
 

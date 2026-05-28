@@ -240,6 +240,21 @@ export function KitViewer({ kit }: KitViewerProps) {
       {kit.rubric?.criteria && (
         <section className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Scoring Rubric</h2>
+          
+          {/* Pass Threshold and Notes */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-900">Pass Threshold:</span>
+              <span className="text-lg font-bold text-blue-700">{kit.rubric.pass_threshold}/5.0</span>
+            </div>
+            {kit.rubric.scoring_notes && (
+              <p className="text-sm text-blue-800 mt-2">
+                <strong>Scoring Guidance:</strong> {kit.rubric.scoring_notes}
+              </p>
+            )}
+          </div>
+          
+          {/* Criteria Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
@@ -253,9 +268,18 @@ export function KitViewer({ kit }: KitViewerProps) {
               </thead>
               <tbody>
                 {kit.rubric.criteria.map((c: any, i: number) => (
-                  <tr key={i} className="border-t">
-                    <td className="p-3 font-medium">{c.name}</td>
-                    <td className="p-3">{c.weight_pct}%</td>
+                  <tr key={i} className="border-t hover:bg-gray-50">
+                    <td className="p-3">
+                      <p className="font-medium text-gray-900">{c.name}</p>
+                      {c.description && (
+                        <p className="text-xs text-gray-500 mt-1">{c.description}</p>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="inline-block px-2 py-1 bg-brand-100 text-brand-700 rounded font-semibold">
+                        {c.weight_pct}%
+                      </span>
+                    </td>
                     <td className="p-3 text-gray-600">{c.score_1}</td>
                     <td className="p-3 text-gray-600">{c.score_3}</td>
                     <td className="p-3 text-gray-600">{c.score_5}</td>
@@ -270,16 +294,48 @@ export function KitViewer({ kit }: KitViewerProps) {
       {/* Red Flags */}
       {kit.red_flags?.length > 0 && (
         <section className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Red Flags & Probes</h2>
-          <div className="space-y-3">
-            {kit.red_flags.map((f: any, i: number) => (
-              <div key={i} className="border-l-4 border-amber-400 bg-amber-50 rounded-r-lg p-4">
-                <p className="text-xs font-bold uppercase text-amber-700">{f.severity} concern</p>
-                <p className="font-medium text-gray-900 mt-1">{f.concern}</p>
-                <p className="text-sm text-gray-600 mt-1"><em>Probe:</em> {f.probe_question}</p>
-                <p className="text-xs text-gray-500 mt-1">Listen for: {f.what_to_listen_for}</p>
-              </div>
-            ))}
+          <h2 className="text-xl font-semibold mb-4">Red Flags & Areas to Probe ({kit.red_flags.length})</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            These are areas requiring deeper investigation based on resume analysis. 
+            Approach diplomatically to understand the full context.
+          </p>
+          <div className="space-y-4">
+            {kit.red_flags.map((f: any, i: number) => {
+              const severityColors = {
+                high: 'border-red-400 bg-red-50',
+                medium: 'border-amber-400 bg-amber-50',
+                low: 'border-blue-400 bg-blue-50'
+              };
+              const severityTextColors = {
+                high: 'text-red-700',
+                medium: 'text-amber-700',
+                low: 'text-blue-700'
+              };
+              const colorClass = severityColors[f.severity as keyof typeof severityColors] || 'border-gray-400 bg-gray-50';
+              const textClass = severityTextColors[f.severity as keyof typeof severityTextColors] || 'text-gray-700';
+              
+              return (
+                <div key={i} className={`border-l-4 rounded-r-lg p-4 ${colorClass}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-xs font-bold uppercase ${textClass}`}>
+                      {f.severity} severity
+                    </span>
+                  </div>
+                  <p className="font-medium text-gray-900 mb-2">{f.concern}</p>
+                  {f.context && (
+                    <p className="text-xs text-gray-600 mb-2 italic">Context: {f.context}</p>
+                  )}
+                  <div className="mt-3 p-3 bg-white rounded border border-gray-200">
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong className="text-gray-900">Probe Question:</strong> {f.probe_question}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      <strong className="text-gray-700">Listen for:</strong> {f.what_to_listen_for}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -287,16 +343,57 @@ export function KitViewer({ kit }: KitViewerProps) {
       {/* Flow Guide */}
       {kit.flow_guide?.length > 0 && (
         <section className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Interview Flow Guide</h2>
-          <div className="space-y-3">
+          <h2 className="text-xl font-semibold mb-4">Interview Flow Guide (60 min)</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Minute-by-minute guide for running a structured, effective interview.
+            Times are approximate - be flexible based on candidate responses.
+          </p>
+          
+          <div className="space-y-4">
             {kit.flow_guide.map((step: any, i: number) => (
-              <div key={i} className="flex gap-4 items-start">
-                <div className="text-sm font-bold text-brand-600 min-w-[40px]">
-                  {step.duration_minutes}m
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{step.section}</p>
-                  <p className="text-sm text-gray-500">{step.activities?.join(" → ")}</p>
+              <div key={i} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex gap-4">
+                  {/* Time Badge */}
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center">
+                      <span className="text-lg font-bold text-brand-700">{step.duration_minutes}m</span>
+                    </div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-2">{step.section}</h3>
+                    
+                    {/* Activities */}
+                    {step.activities?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-gray-500 mb-1">Activities:</p>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          {step.activities.map((activity: string, ai: number) => (
+                            <li key={ai} className="flex items-start gap-2">
+                              <span className="text-brand-500 mt-1">•</span>
+                              <span>{activity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Question Mapping */}
+                    {step.questions_mapped?.length > 0 && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        <strong>Questions to ask:</strong> #{step.questions_mapped.map((q: number) => q + 1).join(', #')}
+                      </p>
+                    )}
+                    
+                    {/* Interviewer Notes */}
+                    {step.interviewer_notes && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <p className="text-xs font-medium text-blue-900 mb-1">💡 Interviewer Tips:</p>
+                        <p className="text-xs text-blue-800">{step.interviewer_notes}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
