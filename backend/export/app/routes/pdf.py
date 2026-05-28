@@ -47,7 +47,13 @@ async def generate_pdf(kit_id: str, x_user_id: str = Header(...)):
             kit_obj.pdf_url = str(pdf_path)
             await session.commit()
 
-    return {"pdf_url": f"/download/{kit_id}", "filename": pdf_filename}
+    # Return full gateway URL for frontend to download
+    # Frontend runs on localhost:3000, gateway on localhost:8000
+    gateway_url = settings.gateway_url or "http://localhost:8000"
+    return {
+        "pdf_url": f"{gateway_url}/api/v1/export/download/{kit_id}",
+        "filename": pdf_filename
+    }
 
 
 @router.get("/download/{kit_id}")

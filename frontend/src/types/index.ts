@@ -24,15 +24,18 @@ export interface MatchAnalysis {
   overall_match_score: number;
   skill_matches: string[];
   skill_gaps: string[];
-  experience_assessment: string;
+  experience_fit: string;  // Backend uses experience_fit, not experience_assessment
+  level_calibration: "underqualified" | "appropriate" | "overqualified" | "unknown";
 }
 
 export interface Question {
   question: string;
-  category: "technical" | "behavioral" | "system_design";
+  category: "technical_depth" | "behavioral" | "system_design" | "domain_knowledge" | "problem_solving" | "gap_verification";
   difficulty: "easy" | "medium" | "hard";
   what_it_tests: string;
   model_answer: string;
+  follow_up_probes?: string[];  // Optional follow-up questions
+  relevance_rationale?: string;  // Why this question matters for this candidate
 }
 
 export interface PracticalTest {
@@ -42,6 +45,8 @@ export interface PracticalTest {
     difficulty: string;
     time_limit: string;
     task_description: string;
+    dataset_scenario?: string;  // Context/scenario for the test
+    expected_deliverables?: string[];  // What candidate should submit
     evaluation_criteria: string[];
   }[];
 }
