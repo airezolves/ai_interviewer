@@ -66,6 +66,7 @@ export default function GeneratePage() {
             <option value="frontend">Frontend Engineer</option>
             <option value="fullstack">Full Stack Engineer</option>
             <option value="data_engineer">Data Engineer</option>
+            <option value="data_scientist">Data Scientist</option>
             <option value="devops">DevOps / SRE</option>
             <option value="ml_engineer">ML Engineer</option>
             <option value="mobile">Mobile Developer</option>

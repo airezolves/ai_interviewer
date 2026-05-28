@@ -72,6 +72,7 @@ async def generate_kit(
             jd_text=data.jd_text,
             resume_text=data.resume_text,
             role_type=data.role_type.value,
+            structured_resume=data.structured_resume,  # Pass pre-structured resume
         )
     )
 

@@ -15,6 +15,7 @@ class GatewaySettings(BaseAppSettings):
 
     # Service URLs (for proxying)
     auth_service_url: str = "http://localhost:8001"
+    resume_service_url: str = "http://localhost:8002"
     kit_orchestrator_url: str = "http://localhost:8004"
     export_service_url: str = "http://localhost:8005"
 

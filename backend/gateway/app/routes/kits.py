@@ -1,7 +1,8 @@
 """Kit routes — proxies to Kit Orchestrator Service."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 import httpx
 
 from backend.gateway.app.config import get_settings
@@ -14,21 +15,93 @@ router = APIRouter()
 
 @router.post("/generate", response_model=JobStatus)
 async def generate_kit(
-    data: KitGenerateRequest,
+    jd_text: str = Form(...),
+    role_type: str = Form(...),
+    resume_file: UploadFile | None = File(None),
+    resume_text: str | None = Form(None),
     user: TokenData = Depends(get_current_user),
 ):
-    """Start kit generation pipeline."""
+    """
+    Start kit generation pipeline.
+    Accepts either resume_file (PDF/DOCX) or resume_text (plain text).
+    If file is provided, it will be parsed automatically.
+    """
     settings = get_settings()
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{settings.kit_orchestrator_url}/generate",
-            json=data.model_dump(),
-            headers={"X-User-ID": user.user_id},
-            timeout=30.0,
+    
+    # Validate that at least one resume input is provided
+    if not resume_file and not resume_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Either resume_file or resume_text must be provided"
         )
-    if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=resp.json())
-    return resp.json()
+    
+    # If file is uploaded, parse it first
+    parsed_resume_text = resume_text
+    structured_resume_data = None
+    
+    if resume_file:
+        try:
+            # Read file content
+            file_content = await resume_file.read()
+            
+            # Call resume service to parse the file (extract + structure in one call)
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                files = {"file": (resume_file.filename, file_content, resume_file.content_type)}
+                resp = await client.post(
+                    f"{settings.resume_service_url}/parse",
+                    files=files,
+                )
+                
+                if resp.status_code != 200:
+                    raise HTTPException(
+                        status_code=resp.status_code,
+                        detail=f"Resume parsing failed: {resp.text}"
+                    )
+                
+                parse_result = resp.json()
+                parsed_resume_text = parse_result.get("raw_text", "")
+                structured_resume_data = parse_result.get("structured_resume")
+                
+                if not parsed_resume_text:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Could not extract text from resume file"
+                    )
+        except httpx.HTTPError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to parse resume file: {str(e)}"
+            )
+    
+    # Create the request payload for orchestrator
+    kit_data = KitGenerateRequest(
+        jd_text=jd_text,
+        resume_text=parsed_resume_text,
+        role_type=role_type,
+        structured_resume=structured_resume_data,  # Send pre-structured resume if available
+    )
+    
+    # Send to orchestrator
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{settings.kit_orchestrator_url}/generate",
+                json=kit_data.model_dump(),
+                headers={"X-User-ID": user.user_id},
+            )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=resp.json())
+        return resp.json()
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid request data: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to start kit generation: {str(e)}"
+        )
 
 
 @router.get("/{kit_id}", response_model=KitResponse)

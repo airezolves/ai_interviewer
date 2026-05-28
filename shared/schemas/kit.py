@@ -8,11 +8,17 @@ from enum import Enum
 
 
 class RoleType(str, Enum):
+    BACKEND = "backend"
+    FRONTEND = "frontend"
+    FULLSTACK = "fullstack"
     DATA_SCIENTIST = "data_scientist"
     ML_ENGINEER = "ml_engineer"
     DATA_ANALYST = "data_analyst"
     DATA_ENGINEER = "data_engineer"
     ANALYTICS_ENGINEER = "analytics_engineer"
+    DEVOPS = "devops"
+    MOBILE = "mobile"
+    ENGINEERING_MANAGER = "engineering_manager"
 
 
 class KitStatus(str, Enum):
@@ -90,6 +96,10 @@ class StructuredJD(BaseModel):
 
 
 class Question(BaseModel):
+    """Interview question with model answer and evaluation criteria."""
+    
+    model_config = {"protected_namespaces": ()}  # Allow 'model_' prefix in field names
+    
     question: str
     category: str  # behavioral, technical, system_design
     what_it_tests: str
@@ -201,9 +211,11 @@ class MatchAnalysis(BaseModel):
 # ─── Kit (full output) ─────────────────────────────────────────
 
 class KitGenerateRequest(BaseModel):
+    """Request schema for kit generation - used internally after file processing."""
     jd_text: str
     resume_text: str | None = None
-    role_type: RoleType = RoleType.DATA_SCIENTIST
+    role_type: RoleType
+    structured_resume: dict | None = None  # Pre-structured resume from Gateway (avoids duplicate LLM call)
 
 
 class KitResponse(BaseModel):

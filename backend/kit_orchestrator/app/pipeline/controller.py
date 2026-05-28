@@ -19,11 +19,13 @@ async def run_pipeline(
     jd_text: str,
     resume_text: str | None,
     role_type: str,
+    structured_resume: dict | None = None,  # Pre-structured resume from Gateway
 ):
     """Execute the full kit generation pipeline.
     
     Flow:
     1. Parse resume (Resume Service) + Analyze JD (AI Engine) — PARALLEL
+       - If structured_resume provided, skip parsing (already done by Gateway)
     2. Match score (AI Engine)
     3. Generate all sections — PARALLEL (questions, test, rubric, flags, flow)
     4. Assemble kit + store in DB
@@ -54,20 +56,35 @@ async def run_pipeline(
             # ─── Phase 1: Parse resume + Analyze JD (parallel) ─────────
             await update_job("generating", "parsing_resume_and_jd", 10)
 
-            parse_coro = _parse_resume(client, settings, resume_text)
+            # If structured_resume already provided by Gateway, use it; else structure it now
+            if structured_resume:
+                # Resume already structured by Gateway (file upload case)
+                resume_coro = asyncio.sleep(0)  # No-op coroutine
+                structured_resume_data = structured_resume
+            else:
+                # Need to structure the resume text (plain text input case)
+                resume_coro = _structure_resume(client, settings, resume_text)
+                structured_resume_data = None
+            
             jd_coro = _analyze_jd(client, settings, jd_text)
-            structured_resume, structured_jd = await asyncio.gather(parse_coro, jd_coro)
+            
+            if structured_resume_data:
+                # Already have structured resume
+                _, structured_jd = await asyncio.gather(resume_coro, jd_coro)
+            else:
+                # Need to structure resume
+                structured_resume_data, structured_jd = await asyncio.gather(resume_coro, jd_coro)
 
             await update_job("generating", "match_analysis", 25)
 
             # ─── Phase 2: Match score ──────────────────────────────────
-            match_analysis = await _match_score(client, settings, structured_resume, structured_jd, role_type)
+            match_analysis = await _match_score(client, settings, structured_resume_data, structured_jd, role_type)
 
             await update_job("generating", "generating_kit_sections", 35)
 
             # ─── Phase 3: Generate all sections (parallel) ─────────────
             context = {
-                "structured_resume": structured_resume,
+                "structured_resume": structured_resume_data,
                 "structured_jd": structured_jd,
                 "match_analysis": match_analysis,
                 "role_type": role_type,
@@ -97,7 +114,7 @@ async def run_pipeline(
             result = await session.execute(select(Kit).where(Kit.id == kit_id))
             kit = result.scalar_one_or_none()
             if kit:
-                kit.structured_resume = structured_resume
+                kit.structured_resume = structured_resume_data
                 kit.structured_jd = structured_jd
                 kit.match_analysis = match_analysis
                 kit.questions = questions
@@ -130,6 +147,20 @@ async def run_pipeline(
 
     except Exception as e:
         await update_job("failed", "error", 0, error=str(e))
+
+
+async def _structure_resume(client: httpx.AsyncClient, settings, resume_text: str | None) -> dict:
+    """Call Resume Service to structure resume text (LLM call)."""
+    if not resume_text:
+        return {}
+    resp = await client.post(
+        f"{settings.resume_service_url}/structure",
+        data={"text": resume_text},
+        timeout=30.0,
+    )
+    if resp.status_code == 200:
+        return resp.json()
+    return {}
 
 
 async def _parse_resume(client: httpx.AsyncClient, settings, resume_text: str | None) -> dict:
