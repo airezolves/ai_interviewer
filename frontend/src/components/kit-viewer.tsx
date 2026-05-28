@@ -11,6 +11,51 @@ interface KitViewerProps {
   };
 }
 
+// Parse skill-based test structure from markdown-formatted text
+function parseSkillBasedTest(taskDescription: string) {
+  const skills: Array<{ name: string; questions: Array<{ number: number; text: string; metadata: string }> }> = [];
+  
+  // Normalize escaped newlines (\\n) to actual newlines
+  // This handles both properly formatted strings and JSON-escaped strings
+  const normalized = taskDescription.replace(/\\n/g, '\n');
+  const lines = normalized.split('\n');
+  
+  let currentSkill: { name: string; questions: Array<{ number: number; text: string; metadata: string }> } | null = null;
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    
+    // Match skill headers like "**Python** (2 questions):"
+    const skillMatch = trimmedLine.match(/^\*\*(.+?)\*\*\s*\((\d+)\s+questions?\):?$/);
+    if (skillMatch) {
+      if (currentSkill) skills.push(currentSkill);
+      currentSkill = { name: skillMatch[1], questions: [] };
+      continue;
+    }
+    
+    // Match question lines like "1. Write a function..."
+    const questionMatch = trimmedLine.match(/^(\d+)\.\s+(.+)/);
+    if (questionMatch && currentSkill) {
+      currentSkill.questions.push({
+        number: parseInt(questionMatch[1]),
+        text: questionMatch[2],
+        metadata: ''
+      });
+      continue;
+    }
+    
+    // Match metadata lines like "Time: 10 minutes | Tests: Basic syntax"
+    const metadataMatch = trimmedLine.match(/^Time:\s*(.+?)\s*\|\s*Tests:\s*(.+)/);
+    if (metadataMatch && currentSkill && currentSkill.questions.length > 0) {
+      const lastQuestion = currentSkill.questions[currentSkill.questions.length - 1];
+      lastQuestion.metadata = `${metadataMatch[1]} • ${metadataMatch[2]}`;
+    }
+  }
+  
+  if (currentSkill) skills.push(currentSkill);
+  return skills;
+}
+
 export function KitViewer({ kit }: KitViewerProps) {
   return (
     <div className="space-y-8">
@@ -48,6 +93,15 @@ export function KitViewer({ kit }: KitViewerProps) {
               </ul>
             </div>
           </div>
+          {kit.match_analysis.experience_fit && (
+            <div className="mt-4 pt-4 border-t">
+              <h4 className="font-medium text-gray-700 mb-2">Experience Assessment</h4>
+              <p className="text-sm text-gray-600">{kit.match_analysis.experience_fit}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Calibration: <span className="font-semibold capitalize">{kit.match_analysis.level_calibration}</span>
+              </p>
+            </div>
+          )}
         </section>
       )}
 
@@ -63,13 +117,32 @@ export function KitViewer({ kit }: KitViewerProps) {
                   <span className="ml-2 text-xs px-2 py-0.5 rounded bg-brand-100 text-brand-700">
                     {q.category}
                   </span>
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                    {q.difficulty}
+                  </span>
                 </summary>
                 <div className="mt-3 text-sm text-gray-600 space-y-2">
                   <p><strong>Tests:</strong> {q.what_it_tests}</p>
-                  <p><strong>Difficulty:</strong> {q.difficulty}</p>
                   <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <strong>Model Answer:</strong> {q.model_answer}
+                    <strong className="text-green-900">Model Answer:</strong>
+                    <p className="mt-1">{q.model_answer}</p>
                   </div>
+                  {q.follow_up_probes?.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                      <strong className="text-blue-900">Follow-up Probes:</strong>
+                      <ul className="mt-1 list-disc list-inside space-y-1">
+                        {q.follow_up_probes.map((probe: string, pi: number) => (
+                          <li key={pi}>{probe}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {q.relevance_rationale && (
+                    <div className="bg-amber-50 border border-amber-200 rounded p-3">
+                      <strong className="text-amber-900">Why This Question:</strong>
+                      <p className="mt-1">{q.relevance_rationale}</p>
+                    </div>
+                  )}
                 </div>
               </details>
             ))}
@@ -80,14 +153,86 @@ export function KitViewer({ kit }: KitViewerProps) {
       {/* Practical Test */}
       {kit.practical_test && (
         <section className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Practical Assessment</h2>
-          <p className="text-gray-600 mb-4">{kit.practical_test.overview}</p>
-          {kit.practical_test.variants?.map((v: any, i: number) => (
-            <div key={i} className="border border-gray-100 rounded-lg p-4 mb-3">
-              <h4 className="font-medium capitalize">{v.difficulty} — {v.time_limit}</h4>
-              <p className="text-sm text-gray-600 mt-2">{v.task_description}</p>
-            </div>
-          ))}
+          <h2 className="text-xl font-semibold mb-4">Practical Technical Assessment</h2>
+          <p className="text-gray-600 mb-6">{kit.practical_test.overview}</p>
+          
+          {kit.practical_test.variants?.map((variant: any, vi: number) => {
+            const skills = parseSkillBasedTest(variant.task_description);
+            const difficultyColors = {
+              junior: 'bg-green-100 text-green-800 border-green-300',
+              mid: 'bg-blue-100 text-blue-800 border-blue-300',
+              senior: 'bg-purple-100 text-purple-800 border-purple-300'
+            };
+            const colorClass = difficultyColors[variant.difficulty as keyof typeof difficultyColors] || 'bg-gray-100 text-gray-800';
+            
+            return (
+              <div key={vi} className={`border-2 rounded-lg p-5 mb-4 ${colorClass}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold capitalize">
+                    {variant.difficulty} Level
+                  </h3>
+                  <span className="text-sm font-medium px-3 py-1 bg-white rounded-full">
+                    ⏱ {variant.time_limit}
+                  </span>
+                </div>
+                
+                {skills.length > 0 ? (
+                  <div className="space-y-4">
+                    {skills.map((skill, si) => (
+                      <div key={si} className="bg-white rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs flex items-center justify-center">
+                            {si + 1}
+                          </span>
+                          {skill.name}
+                          <span className="text-xs font-normal text-gray-500">
+                            ({skill.questions.length} questions)
+                          </span>
+                        </h4>
+                        <div className="space-y-3 ml-8">
+                          {skill.questions.map((q, qi) => (
+                            <div key={qi} className="text-sm">
+                              <p className="font-medium text-gray-800">{q.number}. {q.text}</p>
+                              {q.metadata && (
+                                <p className="text-xs text-gray-600 mt-1 italic">{q.metadata}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
+                      {variant.task_description}
+                    </pre>
+                  </div>
+                )}
+                
+                <div className="mt-4 pt-4 border-t border-white/50">
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <strong className="text-gray-900">Expected Deliverables:</strong>
+                      <ul className="mt-1 list-disc list-inside text-gray-700">
+                        {variant.expected_deliverables?.map((d: string, di: number) => (
+                          <li key={di}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <strong className="text-gray-900">Evaluation Criteria:</strong>
+                      <ul className="mt-1 list-disc list-inside text-gray-700">
+                        {variant.evaluation_criteria?.slice(0, 5).map((c: string, ci: number) => (
+                          <li key={ci}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </section>
       )}
 

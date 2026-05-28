@@ -42,8 +42,16 @@ export default function KitDetailPage() {
   const handleExportPDF = async () => {
     try {
       const res = await apiClient.post(`/export/pdf/${kitId}`);
-      window.open(res.data.pdf_url, "_blank");
-      toast.success("PDF generated!");
+      
+      // Trigger download instead of opening in new tab
+      const link = document.createElement('a');
+      link.href = res.data.pdf_url;
+      link.download = res.data.filename || `interview_kit_${kitId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("PDF downloaded!");
     } catch {
       toast.error("PDF export failed");
     }
