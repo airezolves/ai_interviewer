@@ -100,14 +100,95 @@ class Question(BaseModel):
     
     model_config = {"protected_namespaces": ()}  # Allow 'model_' prefix in field names
     
-    question: str
-    category: str  # behavioral, technical, system_design
-    what_it_tests: str
-    model_answer: str
-    follow_up_probes: list[str] = []
-    difficulty: str = "medium"  # easy, medium, hard
+    question: str = Field(
+        description="The actual interview question to ask the candidate. Should be clear, specific, and relevant to their background and the role requirements."
+    )
+    category: str = Field(
+        description="Question category: 'technical_depth' (verify technical skills), 'behavioral' (past behavior and approach), 'system_design' (architecture and scalability), 'domain_knowledge' (industry-specific knowledge), 'problem_solving' (analytical thinking), or 'gap_verification' (probe identified skill gaps)"
+    )
+    what_it_tests: str = Field(
+        description="Clear explanation of what specific skill, competency, or trait this question evaluates in the candidate"
+    )
+    model_answer: str = Field(
+        description="A strong example answer that demonstrates the expected depth and quality. Should be 2-4 sentences showing what good looks like."
+    )
+    follow_up_probes: list[str] = Field(
+        default_factory=list,
+        description="2-4 follow-up questions to dig deeper based on their initial response. These should probe for specifics, edge cases, or deeper understanding."
+    )
+    difficulty: str = Field(
+        default="medium",
+        description="Question difficulty level: 'easy' (basic understanding), 'medium' (practical application), 'hard' (deep expertise or complex scenarios)"
+    )
+    relevance_rationale: str = Field(
+        default="",
+        description="Brief explanation of why this question is particularly relevant for THIS candidate based on their resume or the JD requirements"
+    )
 
 
+class QuestionSet(BaseModel):
+    """Complete set of interview questions generated for a candidate."""
+    
+    questions: list[Question] = Field(
+        description="Comprehensive list of 15-20 interview questions covering all aspects of evaluation: technical depth, behavioral patterns, system design, domain knowledge, problem-solving, and gap verification"
+    )
+
+
+class TechnicalQuestion(BaseModel):
+    """A single practical technical question/task."""
+    
+    question: str = Field(
+        description="The practical question or task to be completed. Should be specific, hands-on, and testable."
+    )
+    difficulty: str = Field(
+        description="Question difficulty: 'junior' (0-2 years), 'mid' (2-5 years), 'senior' (5+ years)"
+    )
+    what_it_tests: str = Field(
+        description="Specific aspect of the skill being tested (e.g., 'basic syntax', 'optimization', 'architectural design')"
+    )
+    expected_approach: str = Field(
+        description="Brief description of how a competent candidate should approach this question (2-3 sentences)"
+    )
+    evaluation_criteria: list[str] = Field(
+        description="3-5 specific criteria to evaluate the answer (e.g., 'code correctness', 'edge case handling', 'time complexity')"
+    )
+    time_estimate: str = Field(
+        default="15-20 minutes",
+        description="Estimated time for a qualified candidate to complete this question"
+    )
+
+
+class SkillAssessment(BaseModel):
+    """Practical assessment for a specific technical skill."""
+    
+    skill_name: str = Field(
+        description="The technical skill being assessed (e.g., 'Python', 'SQL', 'System Design', 'Machine Learning')"
+    )
+    why_this_skill: str = Field(
+        description="Brief rationale for why this skill is being tested based on the JD requirements and candidate's claimed expertise"
+    )
+    questions: list[TechnicalQuestion] = Field(
+        description="5 questions total: 2 junior level, 2 mid level, 1 senior level"
+    )
+
+
+class PracticalTestSet(BaseModel):
+    """Complete set of skill-based practical assessments."""
+    
+    assessments: list[SkillAssessment] = Field(
+        description="Up to 8 skill-based assessments, each containing 5 questions (2 junior, 2 mid, 1 senior). Total: 40 questions max."
+    )
+    overall_time_estimate: str = Field(
+        default="2-3 hours",
+        description="Total estimated time to complete the full assessment"
+    )
+    recommended_approach: str = Field(
+        default="",
+        description="Instructions for the candidate on how to approach the test (e.g., 'Start with skills you're most confident in', 'Code quality matters more than completion')"
+    )
+
+
+# Legacy models for backward compatibility
 class PracticalTestVariant(BaseModel):
     difficulty: str  # junior, mid, senior
     task_description: str
