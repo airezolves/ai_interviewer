@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 
 interface Kit {
@@ -13,27 +14,61 @@ interface Kit {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [kits, setKits] = useState<Kit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
+
+  // Auth guard
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.push("/login");
+    } else {
+      setChecking(false);
+    }
+  }, [router]);
 
   useEffect(() => {
-    apiClient
-      .get("/kits")
-      .then((res) => setKits(res.data.kits || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    if (!checking) {
+      apiClient
+        .get("/kits")
+        .then((res) => setKits(res.data.kits || []))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [checking]);
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </main>
+    );
+  }
 
   return (
     <main className="max-w-5xl mx-auto py-12 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">My Interview Kits</h1>
-        <Link
-          href="/generate"
-          className="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors"
-        >
-          + New Kit
-        </Link>
+        <div className="flex gap-3">
+          <Link
+            href="/generate"
+            className="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors"
+          >
+            + New Kit
+          </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("refresh_token");
+              router.push("/login");
+            }}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {loading ? (

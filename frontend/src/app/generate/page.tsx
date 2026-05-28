@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { FileUpload } from "@/components/file-upload";
@@ -13,6 +13,25 @@ export default function GeneratePage() {
   const [resumeText, setResumeText] = useState("");
   const [roleType, setRoleType] = useState("backend");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Auth guard
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      router.push("/login");
+    } else {
+      setChecking(false);
+    }
+  }, [router]);
+
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </main>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +70,15 @@ export default function GeneratePage() {
 
   return (
     <main className="max-w-3xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Generate Interview Kit</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Generate Interview Kit</h1>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          ← Back to Dashboard
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Role Type */}

@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       if (isRegister) {
-        await apiClient.post("/auth/register", { email, password, full_name: name });
+        await apiClient.post("/auth/register", { email, password, name });
         toast.success("Account created! Logging in...");
       }
       const res = await apiClient.post("/auth/login", { email, password });
