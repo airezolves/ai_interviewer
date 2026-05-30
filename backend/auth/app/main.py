@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from backend.auth.app.config import get_settings
-from backend.auth.app.routes import auth, users
+from backend.auth.app.routes import auth, users, llm_providers
 from shared.database import init_database
 
 settings = get_settings()
@@ -28,6 +28,7 @@ app = FastAPI(
 
 app.include_router(auth.router, tags=["Auth"])
 app.include_router(users.router, tags=["Users"])
+app.include_router(llm_providers.router, tags=["LLM Providers"])
 
 
 @app.get("/health")

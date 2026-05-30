@@ -53,6 +53,12 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold text-gray-900">My Interview Kits</h1>
         <div className="flex gap-3">
           <Link
+            href="/settings/llm-providers"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            ⚙ LLM Providers
+          </Link>
+          <Link
             href="/generate"
             className="px-4 py-2 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-700 transition-colors"
           >

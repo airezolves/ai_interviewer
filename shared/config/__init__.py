@@ -3,10 +3,14 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from dotenv import load_dotenv
 
 
 # Project root (ai_interviewer/)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# Eager-load .env so os.getenv() also works for code paths not using BaseAppSettings.
+load_dotenv(PROJECT_ROOT / ".env", override=False)
 
 
 class BaseAppSettings(BaseSettings):
@@ -41,6 +45,16 @@ class BaseAppSettings(BaseSettings):
 
     # CORS
     cors_origins: str = "http://localhost:3000,http://localhost:8000"
+
+    # Encryption (AES-256-GCM master key for per-user LLM API key storage)
+    ai_encryption_master_key: str = ""
+
+    # LLM defaults (used when a user has no provider configured)
+    llm_provider: str = "gemini"
+    llm_model: str = "gemini-2.5-pro"
+    gemini_api_key: str = ""
+    anthropic_api_key: str = ""
+    openai_api_key: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
