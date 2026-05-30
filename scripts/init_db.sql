@@ -19,10 +19,22 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Parsed resumes cache (must be created BEFORE kits table)
+CREATE TABLE IF NOT EXISTS parsed_resumes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    file_hash VARCHAR(64) UNIQUE NOT NULL,
+    name VARCHAR(500),
+    raw_text TEXT,
+    structured_data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Kits table
 CREATE TABLE IF NOT EXISTS kits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    parsed_resume_id UUID REFERENCES parsed_resumes(id) ON DELETE SET NULL,
     title VARCHAR(255),
     role_type VARCHAR(50) NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
@@ -57,15 +69,6 @@ CREATE TABLE IF NOT EXISTS generation_jobs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Parsed resumes cache
-CREATE TABLE IF NOT EXISTS parsed_resumes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    file_hash VARCHAR(64) UNIQUE NOT NULL,
-    raw_text TEXT,
-    structured_data JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- Feedback (Phase 2)
 CREATE TABLE IF NOT EXISTS feedback (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -83,7 +86,9 @@ CREATE INDEX IF NOT EXISTS idx_kits_user_id ON kits(user_id);
 CREATE INDEX IF NOT EXISTS idx_kits_status ON kits(status);
 CREATE INDEX IF NOT EXISTS idx_kits_created_at ON kits(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_kits_share_token ON kits(share_token);
+CREATE INDEX IF NOT EXISTS idx_kits_parsed_resume_id ON kits(parsed_resume_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_kit_id ON generation_jobs(kit_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON generation_jobs(status);
 CREATE INDEX IF NOT EXISTS idx_parsed_resumes_hash ON parsed_resumes(file_hash);
+CREATE INDEX IF NOT EXISTS idx_parsed_resumes_user_id ON parsed_resumes(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

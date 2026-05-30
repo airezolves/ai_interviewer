@@ -27,6 +27,7 @@ class User(Base):
 
     # Relationships
     kits = relationship("Kit", back_populates="user", cascade="all, delete-orphan")
+    parsed_resumes = relationship("ParsedResume", back_populates="user")
 
 
 class Kit(Base):
@@ -34,6 +35,7 @@ class Kit(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
+    parsed_resume_id = Column(UUID(as_uuid=True), ForeignKey("parsed_resumes.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(255))
     role_type = Column(String(50), nullable=False)
     status = Column(String(20), default="pending")
@@ -55,6 +57,7 @@ class Kit(Base):
 
     # Relationships
     user = relationship("User", back_populates="kits")
+    parsed_resume = relationship("ParsedResume", back_populates="kits")
     generation_job = relationship("GenerationJob", back_populates="kit", uselist=False)
 
 
@@ -80,7 +83,13 @@ class ParsedResume(Base):
     __tablename__ = "parsed_resumes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     file_hash = Column(String(64), unique=True, nullable=False, index=True)
+    name = Column(String(500), nullable=True)  # Original filename
     raw_text = Column(Text)
     structured_data = Column(JSON)
     created_at = Column(DateTime(timezone=True), default=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="parsed_resumes")
+    kits = relationship("Kit", back_populates="parsed_resume")

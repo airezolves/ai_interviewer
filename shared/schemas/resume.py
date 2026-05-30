@@ -125,3 +125,4 @@ class ResumeParseResponse(BaseModel):
     raw_text: str
     confidence: float = 0.0
     cached: bool = False
+    parsed_resume_id: str | None = None  # ID of the ParsedResume record for linking

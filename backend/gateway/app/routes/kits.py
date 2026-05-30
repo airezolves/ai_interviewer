@@ -38,6 +38,7 @@ async def generate_kit(
     # If file is uploaded, parse it first
     parsed_resume_text = resume_text
     structured_resume_data = None
+    parsed_resume_id = None
     
     if resume_file:
         try:
@@ -47,9 +48,11 @@ async def generate_kit(
             # Call resume service to parse the file (extract + structure in one call)
             async with httpx.AsyncClient(timeout=30.0) as client:
                 files = {"file": (resume_file.filename, file_content, resume_file.content_type)}
+                data = {"user_id": user.user_id}  # Pass user_id to track who uploaded
                 resp = await client.post(
                     f"{settings.resume_service_url}/parse",
                     files=files,
+                    data=data,
                 )
                 
                 if resp.status_code != 200:
@@ -61,6 +64,7 @@ async def generate_kit(
                 parse_result = resp.json()
                 parsed_resume_text = parse_result.get("raw_text", "")
                 structured_resume_data = parse_result.get("structured_resume")
+                parsed_resume_id = parse_result.get("parsed_resume_id")  # Get ID for linking
                 
                 if not parsed_resume_text:
                     raise HTTPException(
@@ -79,6 +83,7 @@ async def generate_kit(
         resume_text=parsed_resume_text,
         role_type=role_type,
         structured_resume=structured_resume_data,  # Send pre-structured resume if available
+        parsed_resume_id=parsed_resume_id,  # Link to parsed resume for tracking
     )
     
     # Send to orchestrator

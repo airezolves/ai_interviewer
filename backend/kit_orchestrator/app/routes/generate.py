@@ -46,6 +46,7 @@ async def generate_kit(
         kit = Kit(
             id=kit_id,
             user_id=uuid.UUID(x_user_id),
+            parsed_resume_id=uuid.UUID(data.parsed_resume_id) if data.parsed_resume_id else None,  # Link to ParsedResume
             role_type=data.role_type.value,
             status="pending",
             jd_text=data.jd_text,
